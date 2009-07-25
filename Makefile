@@ -1,6 +1,6 @@
 PREFIX=/usr/local
-obj = glfps.o
-so = libglfps.so
+obj = src/frapix.o
+so = libfrapix.so
 
 CC = gcc
 CFLAGS = -pedantic -Wall -fPIC -g
@@ -16,9 +16,9 @@ clean:
 .PHONY: install
 install:
 	cp $(so) $(PREFIX)/lib/$(so)
-	cp glfps $(PREFIX)/bin/glfps
+	cp frapix $(PREFIX)/bin/frapix
 
 .PHONY: uninstall
 uninstall:
 	rm $(PREFIX)/lib/$(so)
-	rm $(PREFIX)/bin/glfps
+	rm $(PREFIX)/bin/frapix

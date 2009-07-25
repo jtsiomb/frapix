@@ -1,3 +1,20 @@
+/*
+frapix - framerate monitoring and screen capture for UNIX OpenGL programs.
+Copyright (C) 2009 John Tsiombikas <nuclear@member.fsf.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -37,8 +54,6 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 	interv = msec - prev_print;
 	if(interv >= print_interval) {
 		cur_fps = 1000 * frames / interv;
-		/*printf("FPS: %.2f\n", fps);*/
-		/*fflush(stdout);*/
 		prev_print = msec;
 		frames = 0;
 	} else {
@@ -77,18 +92,18 @@ static int init(void)
 		}
 	}
 
-	if((env = getenv("PRINT_FPS_PERIOD"))) {
+	if((env = getenv("FRAPIX_FPS_UPDATE_RATE"))) {
 		if(!isdigit(*env)) {
-			fprintf(stderr, "PRINT_FPS_FREQ must be set to the period of fps update in milliseconds\n");
+			fprintf(stderr, "FRAPIX_FPS_UPDATE_RATE must be set to the period of fps update in milliseconds\n");
 		} else {
 			print_interval = atoi(env);
 		}
 	}
 
-	if((env = getenv("FPS_LIMIT"))) {
+	if((env = getenv("FRAPIX_FPS_LIMIT"))) {
 		printf("env: %s\n", env);
 		if(!isdigit(*env)) {
-			fprintf(stderr, "FPS_LIMIT must be followed by the maximum fps number\n");
+			fprintf(stderr, "FRAPIX_FPS_LIMIT must be followed by the maximum fps number\n");
 		} else {
 			int max_fps = atoi(env);
 			frame_interval = 1000 / max_fps;
