@@ -36,6 +36,7 @@ static unsigned long frame_interval = 0;
 static int cur_fps;
 static float fps_pos_x, fps_pos_y;
 
+#define OVERHEAD	4
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 {
 	unsigned long msec, interv;
@@ -46,11 +47,11 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		return;
 	}
 
-	msec = get_msec();
-	
 	overlay();
 	swap_buffers(dpy, drawable);
 	
+	msec = get_msec();
+
 	interv = msec - prev_print;
 	if(interv >= print_interval) {
 		cur_fps = 1000 * frames / interv;
@@ -60,7 +61,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		frames++;
 	}
 
-	interv = msec - prev_frame;
+	interv = msec - prev_frame + OVERHEAD;
 	if(interv < frame_interval) {
 		struct timespec ts;
 
@@ -72,7 +73,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		}
 	}
 
-	prev_frame = msec;
+	prev_frame = get_msec();
 }
 
 static int init(void)
@@ -106,9 +107,11 @@ static int init(void)
 			fprintf(stderr, "FRAPIX_FPS_LIMIT must be followed by the maximum fps number\n");
 		} else {
 			int max_fps = atoi(env);
-			frame_interval = 1000 / max_fps;
+			if(max_fps) {
+				frame_interval = 1000 / max_fps;
 
-			printf("set fps limit: %d fps (interval: %ld msec)\n", max_fps, frame_interval);
+				printf("set fps limit: %d fps (interval: %ld msec)\n", max_fps, frame_interval);
+			}
 		}
 	}
 
