@@ -19,10 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <dlfcn.h>
+#include <sys/mman.h>
 #include <X11/Xlib.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include <imago.h>
+#include "opt.h"
+
+int frapix_init_keyb(struct options *o);
 
 static int init(void);
 static void overlay(void);
@@ -31,10 +37,13 @@ static unsigned long get_msec(void);
 static void *so;
 static void (*swap_buffers)(Display*, GLXDrawable);
 
-static unsigned long print_interval = 1000;
-static unsigned long frame_interval = 0;
+/* TODO load these */
+static void (*glUseProgramObjectARB)(unsigned int);
+static unsigned int (*glGetHandleARB)(unsigned int);
+
+static struct options *opt;
+
 static int cur_fps;
-static float fps_pos_x, fps_pos_y;
 
 #define OVERHEAD	4
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
@@ -47,13 +56,40 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		return;
 	}
 
+	if(opt->capture_shot) {
+		int xsz, ysz, img_xsz = -1, img_ysz = -1;
+		uint32_t *img = 0;
+
+		int vp[4];
+		glGetIntegerv(GL_VIEWPORT, vp);
+		xsz = vp[2];
+		ysz = vp[3];
+
+		printf("grabbing image %dx%d\n", xsz, ysz);
+
+		if(xsz != img_xsz || ysz != img_ysz) {
+			free(img);
+			if(!(img = malloc(xsz * ysz * sizeof *img))) {
+				perror("frapix: failed to allocate memory");
+			}
+			img_xsz = xsz;
+			img_ysz = ysz;
+		}
+
+		glReadPixels(0, 0, xsz, ysz, GL_BGRA, GL_UNSIGNED_BYTE, img);
+		if(save_image(opt->shot_fname, img, xsz, ysz, IMG_FMT_AUTO) == -1) {
+			fprintf(stderr, "frapix: failed to save image: %s\n", opt->shot_fname);
+		}
+		opt->capture_shot = 0;
+	}
+
 	overlay();
 	swap_buffers(dpy, drawable);
 	
 	msec = get_msec();
 
 	interv = msec - prev_print;
-	if(interv >= print_interval) {
+	if(interv >= opt->print_interval && interv > 0) {
 		cur_fps = 1000 * frames / interv;
 		prev_print = msec;
 		frames = 0;
@@ -62,11 +98,11 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 	}
 
 	interv = msec - prev_frame + OVERHEAD;
-	if(interv < frame_interval) {
+	if(interv < opt->frame_interval) {
 		struct timespec ts;
 
 		ts.tv_sec = 0;
-		ts.tv_nsec = (frame_interval - interv) * 1000000;
+		ts.tv_nsec = (opt->frame_interval - interv) * 1000000;
 
 		if(nanosleep(&ts, 0) == -1) {
 			perror("nanosleep failed");
@@ -79,6 +115,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 static int init(void)
 {
 	char *env;
+	int fd;
 
 	if(!so) {
 		if(!(so = dlopen("libGL.so", RTLD_LAZY))) {
@@ -93,11 +130,28 @@ static int init(void)
 		}
 	}
 
+	/* allocate shared memory for option struct */
+	if((fd = open("/dev/zero", O_RDWR)) == -1) {
+		perror("frapix: failed to open /dev/zero");
+		return -1;
+	}
+	if((opt = mmap(0, sizeof *opt, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0)) == (void*)-1) {
+		perror("frapix: failed to mmap /dev/zero");
+		return -1;
+	}
+
+	opt->print_interval = 1000;
+	opt->frame_interval = 0;
+	opt->fps_pos_x = 0.95;
+	opt->fps_pos_y = 0.925;
+	opt->shot_key = XK_F12;
+	opt->shot_fname = strdup("/tmp/frapix_shot.png");
+
 	if((env = getenv("FRAPIX_FPS_UPDATE_RATE"))) {
 		if(!isdigit(*env)) {
 			fprintf(stderr, "FRAPIX_FPS_UPDATE_RATE must be set to the period of fps update in milliseconds\n");
 		} else {
-			print_interval = atoi(env);
+			opt->print_interval = atoi(env);
 		}
 	}
 
@@ -108,15 +162,16 @@ static int init(void)
 		} else {
 			int max_fps = atoi(env);
 			if(max_fps) {
-				frame_interval = 1000 / max_fps;
+				opt->frame_interval = 1000 / max_fps;
 
-				printf("set fps limit: %d fps (interval: %ld msec)\n", max_fps, frame_interval);
+				printf("set fps limit: %d fps (interval: %ld msec)\n", max_fps, opt->frame_interval);
 			}
 		}
 	}
 
-	fps_pos_x = 0.95;
-	fps_pos_y = 0.925;
+	if(frapix_init_keyb(opt) == -1) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -195,6 +250,7 @@ static void draw_digit(int x)
 static void overlay(void)
 {
 	int i, fps, fps_digits = count_digits(cur_fps);
+	unsigned int sdr = 0;
 
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
 
@@ -205,7 +261,7 @@ static void overlay(void)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	glTranslatef(fps_pos_x, fps_pos_y, 0);
+	glTranslatef(opt->fps_pos_x, opt->fps_pos_y, 0);
 
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
@@ -217,6 +273,10 @@ static void overlay(void)
 	glColorMask(1, 1, 1, 1);
 
 	/* TODO also disable shaders */
+	if(glUseProgramObjectARB && glGetHandleARB) {
+		sdr = glGetHandleARB(GL_PROGRAM_OBJECT_ARB);
+		glUseProgramObjectARB(0);
+	}
 
 	glColor3f(1.0f, 1.0f, 0.0f);
 
@@ -231,6 +291,10 @@ static void overlay(void)
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
+	if(glUseProgramObjectARB && sdr) {
+		glUseProgramObjectARB(sdr);
+	}
 
 	glPopAttrib();
 }

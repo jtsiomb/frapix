@@ -1,10 +1,11 @@
 PREFIX=/usr/local
-obj = src/frapix.o
+src = $(wildcard src/*.c)
+obj = $(src:.c=.o)
 so = libfrapix.so
 
 CC = gcc
 CFLAGS = -pedantic -Wall -fPIC -g
-LDFLAGS =
+LDFLAGS = -limago
 
 $(so): $(obj)
 	$(CC) -o $@ -shared $(obj) $(LDFLAGS)
