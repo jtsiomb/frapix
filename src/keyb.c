@@ -61,7 +61,6 @@ static int keyb_handler(void)
 		switch(xev.type) {
 		case KeyPress:
 			if(xev.xkey.keycode == XKeysymToKeycode(dpy, opt->shot_key)) {
-				printf("foo\n");
 				opt->capture_shot = 1;
 			}
 			break;
