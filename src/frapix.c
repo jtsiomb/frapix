@@ -44,6 +44,7 @@ static unsigned int (*glGetHandleARB)(unsigned int);
 static struct options *opt;
 
 static int cur_fps;
+static int cap_num;
 
 #define OVERHEAD	4
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
@@ -56,16 +57,20 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		return;
 	}
 
-	if(opt->capture_shot) {
-		int xsz, ysz, img_xsz = -1, img_ysz = -1;
-		uint32_t *img = 0;
+	if(opt->capture_shot || opt->capture_vid) {
+		char fname[64];
+		int xsz, ysz;
+		static int img_xsz = -1, img_ysz = -1;
+		static uint32_t *img;
 
 		int vp[4];
 		glGetIntegerv(GL_VIEWPORT, vp);
 		xsz = vp[2];
 		ysz = vp[3];
 
-		printf("grabbing image %dx%d\n", xsz, ysz);
+		if(opt->capture_shot) {
+			printf("grabbing image %dx%d\n", xsz, ysz);
+		}
 
 		if(xsz != img_xsz || ysz != img_ysz) {
 			free(img);
@@ -77,7 +82,12 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 		}
 
 		glReadPixels(0, 0, xsz, ysz, GL_BGRA, GL_UNSIGNED_BYTE, img);
-		if(save_image(opt->shot_fname, img, xsz, ysz, IMG_FMT_AUTO) == -1) {
+
+		sprintf(fname, opt->shot_fname, cap_num++);
+
+		set_image_option(IMG_OPT_COMPRESS, 1);
+		set_image_option(IMG_OPT_INVERT, 1);
+		if(save_image(fname, img, xsz, ysz, IMG_FMT_TGA) == -1) {
 			fprintf(stderr, "frapix: failed to save image: %s\n", opt->shot_fname);
 		}
 		opt->capture_shot = 0;
@@ -145,7 +155,8 @@ static int init(void)
 	opt->fps_pos_x = 0.95;
 	opt->fps_pos_y = 0.925;
 	opt->shot_key = XK_F12;
-	opt->shot_fname = strdup("/tmp/frapix_shot.png");
+	opt->vid_key = XK_F11;
+	opt->shot_fname = strdup("/tmp/frapix%04d.tga");
 
 	if((env = getenv("FRAPIX_FPS_UPDATE_RATE"))) {
 		if(!isdigit(*env)) {

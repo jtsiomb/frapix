@@ -53,6 +53,7 @@ static int keyb_handler(void)
 
 	/* TODO handle X errors */
 	XGrabKey(dpy, XKeysymToKeycode(dpy, opt->shot_key), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+	XGrabKey(dpy, XKeysymToKeycode(dpy, opt->vid_key), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
 
 	for(;;) {
 		XEvent xev;
@@ -62,6 +63,8 @@ static int keyb_handler(void)
 		case KeyPress:
 			if(xev.xkey.keycode == XKeysymToKeycode(dpy, opt->shot_key)) {
 				opt->capture_shot = 1;
+			} else if(xev.xkey.keycode == XKeysymToKeycode(dpy, opt->vid_key)) {
+				opt->capture_vid = !opt->capture_vid;
 			}
 			break;
 

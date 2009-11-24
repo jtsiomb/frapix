@@ -1,3 +1,29 @@
 #!/bin/sh
 
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-f)
+		if [ -z "$2" ]; then
+			echo "-f must be followed by the framerate limit in frames per second" >&2
+			exit 1
+		fi
+		export FRAPIX_FPS_LIMIT="$2"
+		shift;;
+	-u)
+		if [ -z "$2" ]; then
+			echo "-u must be followed by the update interval in msec" >&2
+			exit 1
+		fi
+		export FRAPIX_FPS_UPDATE_RATE="$2"
+		shift;;
+	-*)
+		echo "unrecognized option: $1" >&2
+		exit 1;;
+	*)
+		break;;
+	esac
+
+	shift
+done
+
 LD_PRELOAD=libfrapix.so $*
