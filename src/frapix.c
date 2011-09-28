@@ -18,8 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <fcntl.h>
+#ifndef __USE_GNU
+/* otherwise RTLD_NEXT won't be defined in recent glibc versions */
+#define __USE_GNU
+#endif
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <X11/Xlib.h>
@@ -34,7 +41,6 @@ static int init(void);
 static void overlay(void);
 static unsigned long get_msec(void);
 
-static void *so;
 static void (*swap_buffers)(Display*, GLXDrawable);
 
 /* TODO load these */
@@ -95,7 +101,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 
 	overlay();
 	swap_buffers(dpy, drawable);
-	
+
 	msec = get_msec();
 
 	interv = msec - prev_print;
@@ -127,14 +133,8 @@ static int init(void)
 	char *env;
 	int fd;
 
-	if(!so) {
-		if(!(so = dlopen("libGL.so", RTLD_LAZY))) {
-			fprintf(stderr, "failed to open libGL.so: %s\n", dlerror());
-			return -1;
-		}
-	}
 	if(!swap_buffers) {
-		if(!(swap_buffers = dlsym(so, "glXSwapBuffers"))) {
+		if(!(swap_buffers = dlsym(RTLD_NEXT, "glXSwapBuffers"))) {
 			fprintf(stderr, "symbol glXSwapBuffers not found: %s\n", dlerror());
 			return -1;
 		}

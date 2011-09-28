@@ -5,7 +5,7 @@ so = libfrapix.so
 
 CC = gcc
 CFLAGS = -pedantic -Wall -fPIC -g
-LDFLAGS = -limago
+LDFLAGS = -ldl -limago
 
 $(so): $(obj)
 	$(CC) -o $@ -shared $(obj) $(LDFLAGS)
