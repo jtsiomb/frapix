@@ -26,4 +26,4 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-LD_PRELOAD=libfrapix.so $*
+LD_PRELOAD="libfrapix.so $LD_PRELOAD" $*
