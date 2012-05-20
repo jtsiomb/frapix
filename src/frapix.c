@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <time.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -32,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <X11/Xlib.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
-#include <imago.h>
+#include <imago2.h>
 #include "opt.h"
 
 int frapix_init_keyb(struct options *o);
@@ -87,13 +89,16 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 			img_ysz = ysz;
 		}
 
-		glReadPixels(0, 0, xsz, ysz, GL_BGRA, GL_UNSIGNED_BYTE, img);
+		glReadPixels(0, 0, xsz, ysz, GL_RGBA, GL_UNSIGNED_BYTE, img);
 
 		sprintf(fname, opt->shot_fname, cap_num++);
 
-		set_image_option(IMG_OPT_COMPRESS, 1);
+		/*set_image_option(IMG_OPT_COMPRESS, 1);
 		set_image_option(IMG_OPT_INVERT, 1);
 		if(save_image(fname, img, xsz, ysz, IMG_FMT_TGA) == -1) {
+			fprintf(stderr, "frapix: failed to save image: %s\n", opt->shot_fname);
+		}*/
+		if(img_save_pixels(fname, img, xsz, ysz, IMG_FMT_RGBA32) == -1) {
 			fprintf(stderr, "frapix: failed to save image: %s\n", opt->shot_fname);
 		}
 		opt->capture_shot = 0;

@@ -39,7 +39,6 @@ static int keyb_handler(void)
 	Display *dpy;
 	int scr;
 	Window win, root;
-	/*XSetWindowAttributes xattr;*/
 
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "frapix: failed to connect to the X server\n");
@@ -49,7 +48,7 @@ static int keyb_handler(void)
 	root = RootWindow(dpy, scr);
 
 	win = XCreateSimpleWindow(dpy, root, 0, 0, 16, 16, 0, 0, 0);
-	XSelectInput(dpy, win, KeyPress);
+	XSelectInput(dpy, win, KeyPressMask);
 
 	/* TODO handle X errors */
 	XGrabKey(dpy, XKeysymToKeycode(dpy, opt->shot_key), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
