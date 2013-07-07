@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include <string.h>
-#include <ctype.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <fcntl.h>
@@ -30,8 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define __USE_GNU
 #endif
 #include <dlfcn.h>
+#include <sys/time.h>
 #include <sys/mman.h>
 #include <X11/Xlib.h>
+#include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <imago2.h>
@@ -139,6 +139,14 @@ static int init(void)
 	int fd;
 
 	if(!swap_buffers) {
+#ifndef RTLD_NEXT
+		void *so = dlopen("libGL.so", RTLD_LAZY);
+		if(!so) {
+			fprintf(stderr, "failed to open libGL.so: %s\n", dlerror());
+			return -1;
+		}
+#define RTLD_NEXT	so
+#endif
 		if(!(swap_buffers = dlsym(RTLD_NEXT, "glXSwapBuffers"))) {
 			fprintf(stderr, "symbol glXSwapBuffers not found: %s\n", dlerror());
 			return -1;
@@ -288,7 +296,9 @@ static void overlay(void)
 	glDisable(GL_TEXTURE_2D);
 	glColorMask(1, 1, 1, 1);
 
-	/* TODO also disable shaders */
+#ifndef GL_PROGRAM_OBJECT_ARB
+#define GL_PROGRAM_OBJECT_ARB	0x8B40
+#endif
 	if(glUseProgramObjectARB && glGetHandleARB) {
 		sdr = glGetHandleARB(GL_PROGRAM_OBJECT_ARB);
 		glUseProgramObjectARB(0);
