@@ -26,4 +26,12 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-LD_PRELOAD="libfrapix.so $LD_PRELOAD" $*
+if uname -s | grep IRIX; then
+	export _RLD_LIST="libfrapix.so:DEFAULT"
+elif [ `uname -s` = Darwin ]; then
+	export DYLD_PRELOAD=libfrapix.dylib
+else
+	export LD_PRELOAD="libfrapix.so $LD_PRELOAD"
+fi
+
+$*
