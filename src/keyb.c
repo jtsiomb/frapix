@@ -8,6 +8,7 @@
 
 static int keyb_handler(void);
 static void sig_handler(int s);
+static int grab_error(Display *dpy, XErrorEvent *err);
 static void cleanup(void);
 
 static struct options *opt;
@@ -39,6 +40,7 @@ static int keyb_handler(void)
 	Display *dpy;
 	int scr;
 	Window win, root;
+	int (*prev_xerr_handler)(Display*, XErrorEvent*);
 
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "frapix: failed to connect to the X server\n");
@@ -50,9 +52,11 @@ static int keyb_handler(void)
 	win = XCreateSimpleWindow(dpy, root, 0, 0, 16, 16, 0, 0, 0);
 	XSelectInput(dpy, win, KeyPressMask);
 
-	/* TODO handle X errors */
+	prev_xerr_handler = XSetErrorHandler(grab_error);
 	XGrabKey(dpy, XKeysymToKeycode(dpy, opt->shot_key), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
 	XGrabKey(dpy, XKeysymToKeycode(dpy, opt->vid_key), AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+	XSync(dpy, True);
+	XSetErrorHandler(prev_xerr_handler);
 
 	for(;;) {
 		XEvent xev;
@@ -81,6 +85,12 @@ static void sig_handler(int s)
 			fprintf(stderr, "frapix: keyboard process died aparently!\n");
 		}
 	}
+}
+
+static int grab_error(Display *dpy, XErrorEvent *err)
+{
+	fprintf(stderr, "frapix: key grabbing failed. some hotkeys will not work!\n");
+	return 0;
 }
 
 static void cleanup(void)

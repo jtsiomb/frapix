@@ -4,8 +4,8 @@ obj = $(src:.c=.o)
 so = libfrapix.so
 
 CC = gcc
-CFLAGS = -pedantic -Wall -fPIC -g `pkg-config --cflags imago`
-LDFLAGS = -ldl `pkg-config --libs imago`
+CFLAGS = -pedantic -Wall -fPIC -g
+LDFLAGS = -ldl -limago
 
 $(so): $(obj)
 	$(CC) -o $@ -shared $(obj) $(LDFLAGS)
