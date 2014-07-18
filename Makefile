@@ -18,6 +18,7 @@ clean:
 install:
 	cp $(so) $(PREFIX)/lib/$(so)
 	cp frapix $(PREFIX)/bin/frapix
+	ldconfig || true
 
 .PHONY: uninstall
 uninstall:
