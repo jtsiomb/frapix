@@ -1,0 +1,17 @@
+About
+-----
+Frapix is a free utility to view and optionally limit the framerate of
+any UNIX OpenGL program. Additionally it lets you capture still images
+and videos from OpenGL programs.
+
+Essentially frapix, is very similar to the popular proprietary
+windows-only fraps program, without being an exact clone.
+
+License
+-------
+Copyright (C) 2009-2015 John Tsiombikas <nuclear@member.fsf.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version. See COPYING for details.
