@@ -42,3 +42,12 @@ terminal, just export LD_PRELOAD=/usr/local/lib/libfrapix.so and it will
 stick. In this case, if you want to set framerate limits as above,
 you'll have to use the equivalent enviroment variables:
 FRAPIX_FPS_LIMIT=<fps> or FRAPIX_FPS_UPDATE_RATE=<interval>.
+
+While running with frappix you may press F12 at any time to capture a
+screenshot, which will be saved as /tmp/frapix####.tga, incrementing the
+number each time you do so. F11 starts a video capture, which just dumps
+a tga sequence in the same way.
+
+The key bindings, and output directory/filenames, should become
+user-configurable at some point in the future. For now feel free to edit
+frapix.c around line 170 to change them.
