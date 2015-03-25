@@ -2,7 +2,7 @@ About
 -----
 Frapix is a free utility to view and optionally limit the framerate of
 any UNIX OpenGL program. Additionally it lets you capture still images
-and videos from OpenGL programs.
+and videos (image sequences only at the moment) from OpenGL programs.
 
 Essentially frapix, is very similar to the popular proprietary
 windows-only fraps program, without being an exact clone.
@@ -15,3 +15,30 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version. See COPYING for details.
+
+Build
+-----
+To compile frapix you will need libimago, get it from
+http://github.com/jtsiomb/libimago and install it before continuing
+further.
+
+Just type make to compile frapix, then make install as root to install
+it system-wide. The default installation prefix is /usr/local, feel free
+to modify the first line of the makefile to change this if you prefer to
+install somewhere else.
+
+Usage
+-----
+Just prefix the frapix script to any program you wish to run with it. So
+for instance: frapix glxgears
+
+Commandline options:
+  -f <fps> will attempt to limit the framerate to <fps>.
+  -u <interval> same as above, but specifying the interval between
+     frames in milliseconds instead of the target framerate.
+
+If you'd rather use frapix with any program ran from a particular
+terminal, just export LD_PRELOAD=/usr/local/lib/libfrapix.so and it will
+stick. In this case, if you want to set framerate limits as above,
+you'll have to use the equivalent enviroment variables:
+FRAPIX_FPS_LIMIT=<fps> or FRAPIX_FPS_UPDATE_RATE=<interval>.
