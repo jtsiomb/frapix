@@ -199,9 +199,9 @@ static int init(void)
 		}
 	}
 
-	/*if(frapix_init_keyb(opt) == -1) {
+	if(frapix_init_keyb(opt) == -1) {
 		return -1;
-	}*/
+	}
 
 	return 0;
 }
