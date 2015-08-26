@@ -45,7 +45,6 @@ static unsigned long get_msec(void);
 
 static void (*swap_buffers)(Display*, GLXDrawable);
 
-/* TODO load these */
 static void (*glUseProgramObjectARB)(unsigned int);
 static unsigned int (*glGetHandleARB)(unsigned int);
 
@@ -151,6 +150,13 @@ static int init(void)
 			fprintf(stderr, "symbol glXSwapBuffers not found: %s\n", dlerror());
 			return -1;
 		}
+		if(!(glUseProgramObjectARB = dlsym(RTLD_NEXT, "glUseProgramObjectARB"))) {
+			fprintf(stderr, "symbol glUseProgramObjectARB not found: %s\n", dlerror());
+			fprintf(stderr, "Overlay won't be able to override active shaders\n");
+		}
+		if(!(glGetHandleARB = dlsym(RTLD_NEXT, "glGetHandleARB"))) {
+			fprintf(stderr, "symbol glGetHandleARB not found: %s\n", dlerror());
+		}
 	}
 
 	/* allocate shared memory for option struct */
@@ -193,9 +199,9 @@ static int init(void)
 		}
 	}
 
-	if(frapix_init_keyb(opt) == -1) {
+	/*if(frapix_init_keyb(opt) == -1) {
 		return -1;
-	}
+	}*/
 
 	return 0;
 }
