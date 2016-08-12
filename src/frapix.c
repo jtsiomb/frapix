@@ -43,7 +43,8 @@ static int init(void);
 static void overlay(void);
 static unsigned long get_msec(void);
 
-static void (*swap_buffers)(Display*, GLXDrawable);
+static void (*glx_swap_buffers)(Display*, GLXDrawable);
+static void (*sdl_gl_swap_window)(void *win);
 
 static void (*glUseProgramObjectARB)(unsigned int);
 static unsigned int (*glGetHandleARB)(unsigned int);
@@ -53,6 +54,11 @@ static struct options *opt;
 static int cur_fps;
 static int cap_num;
 
+void SDL_GL_SwapWindow(void *sdlwin)
+{
+	glXSwapBuffers(sdlwin, 0);	/* hack */
+}
+
 #define OVERHEAD	4
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 {
@@ -60,7 +66,7 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 	static unsigned long prev_frame, prev_print;
 	static unsigned long frames;
 
-	if(!swap_buffers && init() == -1) {
+	if(!glx_swap_buffers && init() == -1) {
 		return;
 	}
 
@@ -104,7 +110,11 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 	}
 
 	overlay();
-	swap_buffers(dpy, drawable);
+	if(!drawable && sdl_gl_swap_window) {
+		sdl_gl_swap_window(dpy);
+	} else {
+		glx_swap_buffers(dpy, drawable);
+	}
 
 	msec = get_msec();
 
@@ -137,7 +147,7 @@ static int init(void)
 	char *env;
 	int fd;
 
-	if(!swap_buffers) {
+	if(!glx_swap_buffers) {
 #ifndef RTLD_NEXT
 		void *so = dlopen("libGL.so", RTLD_LAZY);
 		if(!so) {
@@ -146,7 +156,7 @@ static int init(void)
 		}
 #define RTLD_NEXT	so
 #endif
-		if(!(swap_buffers = dlsym(RTLD_NEXT, "glXSwapBuffers"))) {
+		if(!(glx_swap_buffers = dlsym(RTLD_NEXT, "glXSwapBuffers"))) {
 			fprintf(stderr, "symbol glXSwapBuffers not found: %s\n", dlerror());
 			return -1;
 		}
@@ -157,6 +167,8 @@ static int init(void)
 		if(!(glGetHandleARB = dlsym(RTLD_NEXT, "glGetHandleARB"))) {
 			fprintf(stderr, "symbol glGetHandleARB not found: %s\n", dlerror());
 		}
+
+		sdl_gl_swap_window = dlsym(RTLD_NEXT, "SDL_GL_SwapWindow");
 	}
 
 	/* allocate shared memory for option struct */
